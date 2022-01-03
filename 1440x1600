@@ -1,0 +1,54 @@
+1440x1600.
+Split into grid cells of size 80.
+X axis there are 18 cells, Y axis there are 20.
+
+so at the corners, 
+21 Y axis corners, 19 X axis corners.
+
+
+enum corner_status
+{
+  NOT_IN_PATTERN = 0,
+  IN_PATTERN_CAPTURED = 1,
+  IN_PATTERN_NOT_CAPTURED = 2,
+}
+
+struct Corner 
+{
+  enum corner_status status;
+  float bearing_x;
+  float bearing_y;
+  // Bearing_Z is always 1.0f - these vectors are NOT normalized and can only point in front of the view plane for now
+}
+
+struct CaptureGrid 
+{
+  struct Corner corners[21][19]
+}
+
+// Four captures for each pattern - so, 
+
+CaptureGrid captures[16]
+
+
+xrt_vec2 uv_lut[21][19]
+
+
+Mapping from aruco id and corner of aruco to grid point is needed.
+
+struct point2i {
+  int x;
+  int y;
+}
+
+std::vector<std::vector<point2i>> arucos_corners_to_grid_indices
+
+
+{00,01,10,11}_{0,1,2,3}_{left,right}.png
+
+// Display pattern 1
+// Wait 10 frames
+// Capture four consecutive frames
+
+
+cmake .. -DSANITIZE_ADDRESS=On -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFORCE_COLORED_OUTPUT=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=True
