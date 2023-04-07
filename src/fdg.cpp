@@ -10,7 +10,7 @@
 #include <opencv2/opencv.hpp>
 
 
-#include "cJSON.h"
+#include "cjson/cJSON.h"
 #include "defines.hpp"
 #include "fdg.hpp"
 
@@ -41,22 +41,22 @@ make_neighbors(CaptureGrid *obj, int u, int v)
 
 	// Down-Right
 	if ((u != grid_width - 1) && (v != grid_height - 1)) {
-		us->gay_neighbors[us->num_gay_neighbors++] = &obj->corners[v + 1][u + 1];
+		us->diagonal_neighbors[us->num_diagonal_neighbors++] = &obj->corners[v + 1][u + 1];
 	}
 
 	// Up-Left
 	if ((u != 0) && (v != 0)) {
-		us->gay_neighbors[us->num_gay_neighbors++] = &obj->corners[v - 1][u - 1];
+		us->diagonal_neighbors[us->num_diagonal_neighbors++] = &obj->corners[v - 1][u - 1];
 	}
 
 	// Up-Right
 	if ((u != grid_width - 1) && (v != 0)) {
-		us->gay_neighbors[us->num_gay_neighbors++] = &obj->corners[v - 1][u + 1];
+		us->diagonal_neighbors[us->num_diagonal_neighbors++] = &obj->corners[v - 1][u + 1];
 	}
 
 	// Down-Left
 	if ((u != 0) && (v != grid_height - 1)) {
-		us->gay_neighbors[us->num_gay_neighbors++] = &obj->corners[v + 1][u - 1];
+		us->diagonal_neighbors[us->num_diagonal_neighbors++] = &obj->corners[v + 1][u - 1];
 	}
 }
 
@@ -92,8 +92,8 @@ calc_avg_neighbor_len(CaptureGrid *obj, int u, int v)
 	float avg_len = 0;
 	int num_edges = 0;
 	xrt_vec2 us = obj->corners[v][u].bearing;
-	for (int i = 0; i < obj->corners[v][u].num_gay_neighbors; i++) {
-		avg_len += m_vec2_len(us - obj->corners[v][u].gay_neighbors[i]->bearing) / (1.414);
+	for (int i = 0; i < obj->corners[v][u].num_diagonal_neighbors; i++) {
+		avg_len += m_vec2_len(us - obj->corners[v][u].diagonal_neighbors[i]->bearing) / (1.414);
 		num_edges += 1;
 	}
 
@@ -111,16 +111,16 @@ calc_force_neighbor_correct_length(CaptureGrid *obj, float desired_length, int u
 	xrt_vec2 us = obj->corners[v][u].bearing;
 
 	// This part works. I'm not sure what b I should select.
-	// for (int i = 0; i < obj->corners[v][u].num_gay_neighbors; i++) {
+	// for (int i = 0; i < obj->corners[v][u].num_diagonal_neighbors; i++) {
 	// 	// From us to them
-	// 	xrt_vec2 dir = obj->corners[v][u].gay_neighbors[i]->bearing - us;
+	// 	xrt_vec2 dir = obj->corners[v][u].diagonal_neighbors[i]->bearing - us;
 	// 	float go_amount = m_vec2_len(dir)
 	// 	obj->corners[v][u].accum_force += m_vec2_mul_scalar(dir, b / (1.414*6));
 	// }
 
-	for (int i = 0; i < obj->corners[v][u].num_gay_neighbors; i++) {
+	for (int i = 0; i < obj->corners[v][u].num_diagonal_neighbors; i++) {
 		// From us to them
-		xrt_vec2 dir = obj->corners[v][u].gay_neighbors[i]->bearing - us;
+		xrt_vec2 dir = obj->corners[v][u].diagonal_neighbors[i]->bearing - us;
 		float go_amount = m_vec2_len(dir) - desired_length*1.414;
 		obj->corners[v][u].accum_force += m_vec2_mul_scalar(dir, go_amount*.32);
 	}

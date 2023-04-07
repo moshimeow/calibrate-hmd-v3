@@ -10,7 +10,7 @@
 #include <opencv2/opencv.hpp>
 
 
-#include "cJSON.h"
+#include "cjson/cJSON.h"
 #include "defines.hpp"
 #include "fdg.hpp"
 
@@ -304,7 +304,7 @@ main()
 
 	cv::Ptr<cv::aruco::Dictionary> our_dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_1000);
 
-	std::vector<std::vector<int>> fuckyou = {
+	std::vector<std::vector<int>> offsets_list = {
 	    {0, 0}, //
 	    {1, 0}, //
 	    {0, 1}, //
@@ -316,7 +316,7 @@ main()
 	int cap_ax = 0;
 	while (true) {
 
-		std::vector<int> fuck = fuckyou[cap_ax];
+		std::vector<int> offsets = offsets_list[cap_ax];
 		cap_ax++;
 		if (cap_ax > 3) {
 			break;
@@ -326,13 +326,13 @@ main()
 		cv::Mat our_mat(1600, 1440, CV_8UC1);
 
 		std::vector<std::vector<point2i>> grid_pts =
-		    draw_arucos_2(fuck[0], fuck[1], our_mat(cv::Rect(0, 0, 1440, 1600)), our_dict);
+		    draw_arucos_2(offsets[0], offsets[1], our_mat(cv::Rect(0, 0, 1440, 1600)), our_dict);
 
 		for (int view = 0; view < 2; view++) {
 			for (int i = 0; i < 16; i++) {
 				char name[1288];
 				const char *side_name = view ? "right" : "left";
-				sprintf(name, "captures/%d%d_%d_%s.png", fuck[0], fuck[1], i, side_name);
+				sprintf(name, "captures/%d%d_%d_%s.png", offsets[0], offsets[1], i, side_name);
 				cv::Mat left = cv::imread(name, cv::IMREAD_GRAYSCALE);
 				std::vector<std::vector<cv::Point2f>> corners;
 				std::vector<int> ids;

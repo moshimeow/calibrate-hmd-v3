@@ -11,27 +11,14 @@
 #include <opencv2/opencv.hpp>
 
 
-#include "cJSON.h"
-#include "m_vec2.h"
+#include "cjson/cJSON.h"
+#include "math/m_vec2.h"
 
 
 // Structs
 
 #define grid_width 19
 #define grid_height 21
-
-struct xrt_size
-{
-	int w;
-	int h;
-};
-
-struct xrt_vec3
-{
-	float x;
-	float y;
-	float z;
-};
 
 struct point2i
 {
@@ -59,8 +46,8 @@ struct Corner
 	Corner *straight_neighbors[4];
 	int num_straight_neighbors = 0;
 
-	Corner *gay_neighbors[4];
-	int num_gay_neighbors = 0;
+	Corner *diagonal_neighbors[4];
+	int num_diagonal_neighbors = 0;
 
 	// Bearing_Z is always 1.0f - these vectors are NOT normalized and can only
 	// point in front of the view plane for now

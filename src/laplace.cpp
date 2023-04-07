@@ -10,9 +10,9 @@
 #include <opencv2/opencv.hpp>
 
 
-#include "cJSON.h"
+#include "cjson/cJSON.h"
 #include "fdg.hpp"
-#include "u_json.h"
+#include "util/u_json.h"
 #include "defines.hpp"
 
 void

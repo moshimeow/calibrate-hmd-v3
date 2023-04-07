@@ -1,4 +1,4 @@
-#include "m_vec2.h"
+#include "math/m_vec2.h"
 
 xrt_vec2 in_grid[21][19] = {{{NAN, NAN},
                              {NAN, NAN},
