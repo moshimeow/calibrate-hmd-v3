@@ -390,7 +390,7 @@ main()
 
 
 				for (int i = 0; i < 16 * 4; i++) {
-					Corner *impor = &the_one_and_only->grids[view][i].corners[y][x];
+					Corner *impor = &obj->grids[view][i].corners[y][x];
 					if (impor->status == CAPTURED) {
 						cell_exists = cell_exists || true;
 						num_captured++;
@@ -408,6 +408,9 @@ main()
 					both[view].corners[y][x].status = CAPTURED;
 				} else {
 					both[view].corners[y][x].status = NOT_CAPTURED;
+
+					both[view].corners[y][x].bearing.x = (float)x / (100.0f);
+					both[view].corners[y][x].bearing.y = (float)-y / (100.0f);
 					printf("nnnnnnnnnnnnn ");
 				}
 			}

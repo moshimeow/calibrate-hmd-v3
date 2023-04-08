@@ -1,5 +1,4 @@
-#include <iostream>
-
+#include "util/u_logging.h"
 #include "depthai/depthai.hpp"
 
 #include <opencv2/aruco.hpp>
@@ -13,6 +12,9 @@
 #include "cjson/cJSON.h"
 #include "defines.hpp"
 #include "fdg.hpp"
+
+#include <iostream>
+
 
 float repel_force;
 
@@ -72,16 +74,19 @@ calc_force_repulsion(CaptureGrid *obj, float amt, int our_u, int our_v)
 			Corner *other = &obj->corners[v][u];
 			// From other to us - we want to go away from other, always.
 			xrt_vec2 dir = our->bearing - other->bearing;
+			float len_dir = m_vec2_len(dir);
+			if (len_dir == 0) {
+				U_LOG_E(
+				    "Somehow, we (coordinate %d %d) are at the exact same position as (coordinate %d "
+				    "%d): %f %f. Not factoring this pair into force calculation.",
+				    our_u, our_v, u, v, our->bearing.x, our->bearing.y);
+				continue;
+			}
 			float mag = amt / m_vec2_len(dir);
 
 			m_vec2_normalize(&dir);
 
 			our->accum_force += m_vec2_mul_scalar(dir, mag);
-			if (our->accum_force.x != our->accum_force.x) {
-				printf("uh oh: zero length\n");
-				our->accum_force = {0, 0};
-			}
-			// printf("%f %f\n", our->accum_force.x, our->accum_force.y);
 		}
 	}
 }
@@ -121,8 +126,8 @@ calc_force_neighbor_correct_length(CaptureGrid *obj, float desired_length, int u
 	for (int i = 0; i < obj->corners[v][u].num_diagonal_neighbors; i++) {
 		// From us to them
 		xrt_vec2 dir = obj->corners[v][u].diagonal_neighbors[i]->bearing - us;
-		float go_amount = m_vec2_len(dir) - desired_length*1.414;
-		obj->corners[v][u].accum_force += m_vec2_mul_scalar(dir, go_amount*.32);
+		float go_amount = m_vec2_len(dir) - desired_length * 1.414;
+		obj->corners[v][u].accum_force += m_vec2_mul_scalar(dir, go_amount * .32);
 	}
 
 	for (int i = 0; i < obj->corners[v][u].num_straight_neighbors; i++) {
@@ -172,7 +177,7 @@ bear2px(xrt_vec2 bear)
 
 	return {bear.x, bear.y};
 }
-//26cb7c
+// 26cb7c
 static void
 display_grid(CaptureGrid *obj)
 {
@@ -217,12 +222,12 @@ fdg_run(CaptureGrid *obj)
 	}
 	display_grid(obj);
 
-	repel_force =  0.000003;
+	repel_force = 0.000003;
 
 	int num_iterations = 3000;
 	for (int i = 0; i < num_iterations; i++) {
 		if (i > num_iterations / 2) {
-			repel_force =  0.000001;
+			repel_force = 0.000001;
 		}
 		// printf("\n");
 		printf("%d / %d\r", i, num_iterations);
