@@ -8,30 +8,32 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
-
+#include "tracking/t_calibration_opencv.hpp"
 
 #include "cjson/cJSON.h"
 #include "defines.hpp"
 #include "fdg.hpp"
 
+#include "load_basalt_calibration.hpp"
+
 // Structs
 
-struct Whatever
-{
-	cv::Size image_size_pixels_cv;
-	cv::Matx<double, 3, 3> cameraMatrix;
-	cv::Matx<double, 4, 1> distortion_fisheye_mat;
-	bool use_fisheye;
-};
+// struct Whatever
+// {
+// 	cv::Size image_size_pixels_cv;
+// 	cv::Matx<double, 3, 3> cameraMatrix;
+// 	cv::Matx<double, 4, 1> distortion_fisheye_mat;
+// 	bool use_fisheye;
+// };
 
-struct StereoCameraCalibrationWrapper
-{
-	Whatever view[2];
-	cv::Mat_<double> camera_translation_mat;
-	cv::Matx<double, 3, 3> camera_rotation_mat;
-	cv::Mat_<double> camera_essential_mat;
-	cv::Mat_<double> camera_fundamental_mat;
-};
+// struct StereoCameraCalibrationWrapper
+// {
+// 	Whatever view[2];
+// 	cv::Mat_<double> camera_translation_mat;
+// 	cv::Matx<double, 3, 3> camera_rotation_mat;
+// 	cv::Mat_<double> camera_essential_mat;
+// 	cv::Mat_<double> camera_fundamental_mat;
+// };
 
 // typedef point2i aruco_to_grid_idx[4];
 // struct aruco_to_grid_idx{}
@@ -40,7 +42,9 @@ struct StereoCameraCalibrationWrapper
 
 struct calib_obj
 {
-	struct StereoCameraCalibrationWrapper our_wrap;
+	struct t_stereo_camera_calibration *calib = nullptr;
+	struct xrt::auxiliary::tracking::StereoCameraCalibrationWrapper *our_wrap = nullptr;
+	// struct StereoCameraCalibrationWrapper our_wrap;
 
 	xrt_vec2 uv_lut[21][19];
 
@@ -56,62 +60,61 @@ struct calib_obj
 
 calib_obj *the_one_and_only;
 
-void
-dummy_fill_wrap(calib_obj *obj)
-{
-	obj->our_wrap.view[0].image_size_pixels_cv.height = 800;
-	obj->our_wrap.view[0].image_size_pixels_cv.width = 1280;
+// void
+// dummy_fill_wrap(calib_obj *obj)
+// {
+// 	obj->our_wrap.view[0].image_size_pixels_cv.height = 800;
+// 	obj->our_wrap.view[0].image_size_pixels_cv.width = 1280;
 
-	obj->our_wrap.view[1].image_size_pixels_cv.height = 800;
-	obj->our_wrap.view[1].image_size_pixels_cv.width = 1280;
+// 	obj->our_wrap.view[1].image_size_pixels_cv.height = 800;
+// 	obj->our_wrap.view[1].image_size_pixels_cv.width = 1280;
 
-	obj->our_wrap.view[0].cameraMatrix = {508.2431317803847, 0, 625.1262964163459,
-	                                      //
-	                                      0, 508.0092415823303, 436.0861794525318,
-	                                      //
-	                                      0, 0, 1}; // Shut up
+// 	obj->our_wrap.view[0].cameraMatrix = {508.2431317803847, 0, 625.1262964163459,
+// 	                                      //
+// 	                                      0, 508.0092415823303, 436.0861794525318,
+// 	                                      //
+// 	                                      0, 0, 1}; // Shut up
 
-	obj->our_wrap.view[1].cameraMatrix = {508.0612269474984, 0, 646.8775239309249,
-	                                      //
-	                                      0, 507.794410062113, 348.0291105458621,
-	                                      //
-	                                      0, 0, 1}; // Shhhhhh
+// 	obj->our_wrap.view[1].cameraMatrix = {508.0612269474984, 0, 646.8775239309249,
+// 	                                      //
+// 	                                      0, 507.794410062113, 348.0291105458621,
+// 	                                      //
+// 	                                      0, 0, 1}; // Shhhhhh
 
-	obj->our_wrap.view[0].distortion_fisheye_mat = {-0.01178353719932522, -0.002743341972778042,
-	                                                5.13223456164071e-05, -6.336463736072942e-05};
+// 	obj->our_wrap.view[0].distortion_fisheye_mat = {-0.01178353719932522, -0.002743341972778042,
+// 	                                                5.13223456164071e-05, -6.336463736072942e-05};
 
-	obj->our_wrap.view[1].distortion_fisheye_mat = {-0.01308899660105348, 0.004549237696403933,
-	                                                -0.00751955708545033, 0.00240647121573423};
+// 	obj->our_wrap.view[1].distortion_fisheye_mat = {-0.01308899660105348, 0.004549237696403933,
+// 	                                                -0.00751955708545033, 0.00240647121573423};
 
-	obj->our_wrap.view[0].use_fisheye = true;
-	obj->our_wrap.view[1].use_fisheye = true;
+// 	obj->our_wrap.view[0].use_fisheye = true;
+// 	obj->our_wrap.view[1].use_fisheye = true;
 
-	obj->our_wrap.camera_rotation_mat = {0.99998401008472138,    -0.0056288582865031264, -0.00054362603901055831,
-	                                     0.005632298495140923,   0.99996269403283633,    0.0065488744264765369,
-	                                     0.00050674307243268977, -0.006551831574650723,  0.99997840812413341};
-	obj->our_wrap.camera_translation_mat =
-	    cv::Mat_<double>{-0.045219290732227996, -0.00011277813077547463, 6.1651923527060852e-05};
+// 	obj->our_wrap.camera_rotation_mat = {0.99998401008472138,    -0.0056288582865031264, -0.00054362603901055831,
+// 	                                     0.005632298495140923,   0.99996269403283633,    0.0065488744264765369,
+// 	                                     0.00050674307243268977, -0.006551831574650723,  0.99997840812413341};
+// 	obj->our_wrap.camera_translation_mat =
+// 	    cv::Mat_<double>{-0.045219290732227996, -0.00011277813077547463, 6.1651923527060852e-05};
 
-	cv::fisheye::stereoRectify(obj->our_wrap.view[0].cameraMatrix,           //
-	                           obj->our_wrap.view[0].distortion_fisheye_mat, //
-	                           obj->our_wrap.view[1].cameraMatrix,           //
-	                           obj->our_wrap.view[1].distortion_fisheye_mat, //
-	                           cv::Size{1280, 800},                          //
+// 	cv::fisheye::stereoRectify(obj->our_wrap.view[0].cameraMatrix,           //
+// 	                           obj->our_wrap.view[0].distortion_fisheye_mat, //
+// 	                           obj->our_wrap.view[1].cameraMatrix,           //
+// 	                           obj->our_wrap.view[1].distortion_fisheye_mat, //
+// 	                           cv::Size{1280, 800},                          //
 
-	                           obj->our_wrap.camera_rotation_mat,    //
-	                           obj->our_wrap.camera_translation_mat, //
-	                           obj->R[0],                            //
-	                           obj->R[1],                            //
-	                           obj->P1,                              //
-	                           obj->P2,                              //
-	                           obj->Q,                               //
-	                           0);
+// 	                           obj->our_wrap.camera_rotation_mat,    //
+// 	                           obj->our_wrap.camera_translation_mat, //
+// 	                           obj->R[0],                            //
+// 	                           obj->R[1],                            //
+// 	                           obj->P1,                              //
+// 	                           obj->P2,                              //
+// 	                           obj->Q,                               //
+// 	                           0);
 
-	std::cout << obj->R[0] << std::endl << obj->R[1] << std::endl;
-}
+// 	std::cout << obj->R[0] << std::endl << obj->R[1] << std::endl;
+// }
 
 std::vector<std::vector<point2i>>
-
 draw_arucos_2(bool offsX, bool offsY, cv::Mat our_mat, cv::Ptr<cv::aruco::Dictionary> our_dict)
 {
 
@@ -199,7 +202,22 @@ debug_aruco_corners(cv::Mat img,
 	for (int i = 0; i < ids.size(); i++) {
 		int id = ids[i];
 		// std::vector<cv::Point2f>& corners = all_corners[i];
+
+		U_LOG_E("id %d", id);
+
+		if (id > corner_to_grid_pt.size()) {
+			U_LOG_E("This probably shouldn't happen! id > ");
+			continue;
+		}
+
+		if (corner_to_grid_pt[id].size() == 0) {
+			U_LOG_E("This probably shouldn't happen!");
+			continue;
+		}
+
 		std::vector<point2i> map = corner_to_grid_pt[id];
+
+
 
 		for (int j = 0; j < 4; j++) {
 			int x_pt = map[j].x;
@@ -284,9 +302,9 @@ process_into_capturegrid(calib_obj *obj,
 			corner->px_coord.x = all_corners[a_idx][c_idx].x;
 			corner->px_coord.y = all_corners[a_idx][c_idx].y;
 
-			corner->bearing = raycoord(obj->our_wrap.view[view].cameraMatrix,
-			                           cv::Mat(obj->our_wrap.view[view].distortion_fisheye_mat),
-			                           obj->R[view], corner->px_coord);
+			corner->bearing =
+			    raycoord(obj->our_wrap->view[view].intrinsics_mat,
+			             cv::Mat(obj->our_wrap->view[view].distortion_mat), obj->R[view], corner->px_coord);
 			// printf("%f %f\n", corner->bearing.x, corner->bearing.y);
 		}
 	}
@@ -296,11 +314,40 @@ int
 main()
 {
 	the_one_and_only = new calib_obj;
-	dummy_fill_wrap(the_one_and_only);
 
-	cv::namedWindow("hi", 0);
-	cv::moveWindow("hi", 2000, 0);
-	cv::setWindowProperty("hi", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+	// dummy_fill_wrap(the_one_and_only);
+
+
+	// xrt::auxiliary::tracking::StereoCameraCalibrationWrapper
+
+	load_basalt_calibration("/4/epics/AWE/calibrate_ns/calibrate_calibration_camera_2/result/calibration.json",
+	                        &the_one_and_only->calib);
+
+	the_one_and_only->our_wrap =
+	    new xrt::auxiliary::tracking::StereoCameraCalibrationWrapper(the_one_and_only->calib);
+
+	calib_obj *obj = the_one_and_only;
+
+	cv::fisheye::stereoRectify(obj->our_wrap->view[0].intrinsics_mat, //
+	                           obj->our_wrap->view[0].distortion_mat, //
+	                           obj->our_wrap->view[1].intrinsics_mat, //
+	                           obj->our_wrap->view[1].distortion_mat, //
+	                           cv::Size{1280, 800},                   //
+
+	                           obj->our_wrap->camera_rotation_mat,    //
+	                           obj->our_wrap->camera_translation_mat, //
+	                           obj->R[0],                             //
+	                           obj->R[1],                             //
+	                           obj->P1,                               //
+	                           obj->P2,                               //
+	                           obj->Q,                                //
+	                           0);
+
+	std::cout << obj->R[0] << std::endl << obj->R[1] << std::endl;
+
+	// cv::namedWindow("hi", 0);
+	// cv::moveWindow("hi", 2000, 0);
+	// cv::setWindowProperty("hi", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
 	cv::Ptr<cv::aruco::Dictionary> our_dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_1000);
 
@@ -333,11 +380,34 @@ main()
 				char name[1288];
 				const char *side_name = view ? "right" : "left";
 				sprintf(name, "captures/%d%d_%d_%s.png", offsets[0], offsets[1], i, side_name);
+				U_LOG_E("%s", name);
 				cv::Mat left = cv::imread(name, cv::IMREAD_GRAYSCALE);
-				std::vector<std::vector<cv::Point2f>> corners;
-				std::vector<int> ids;
+
+				// cv::imshow("left", left);
+				// cv::waitKey(0);
+				std::vector<std::vector<cv::Point2f>> corners = {};
+				std::vector<int> ids = {};
 
 				cv::aruco::detectMarkers(left, our_dict, corners, ids);
+
+				for (size_t i = 0; i < corners.size(); i++) {
+					// 9*8 markers - 71st id is the last one. If we get something more than 71, it's
+					// a mis-detection and we need to get rid of it (this has happened)
+					// 
+					// It sucks that we're getting marker mis-detections but shouldn't be too common fingers crossed.
+					if (ids[i] > 71) {
+						U_LOG_E("Erasing id %d in place %d!", ids[i], i);
+						corners.erase(corners.begin()+i);
+						ids.erase(ids.begin()+i);
+					}
+				}
+
+
+				cv::Mat left_rgb = {};
+				cv::cvtColor(left, left_rgb, cv::COLOR_GRAY2BGR);
+				cv::aruco::drawDetectedMarkers(left_rgb, corners, ids);
+				cv::imshow("hi", left_rgb);
+				cv::waitKey(1);
 
 				float sf = 1.8f;
 				cv::resize(left, left, cv::Size(), sf, sf);
@@ -356,10 +426,6 @@ main()
 
 				process_into_capturegrid(the_one_and_only, view, corners, ids, grid_pts,
 				                         &the_one_and_only->grids[view][i]);
-
-				// cv::aruco::drawDetectedMarkers(left, corners_2x, ids);
-				// cv::imshow("hi", left);
-				// cv::waitKey(1);
 			}
 		}
 	}
@@ -419,7 +485,8 @@ main()
 
 	cJSON *root = cJSON_CreateObject();
 
-	cJSON_AddStringToObject(root, "calibration-type", "Numba two babey!!!!!");
+	cJSON_AddStringToObject(root, "type", "Moshi's meshgrid-based distortion correction");
+	cJSON_AddNumberToObject(root, "version", 2);
 
 	cJSON_AddNumberToObject(root, "num_grid_points_x", 19);
 	cJSON_AddNumberToObject(root, "num_grid_points_y", 21);
@@ -430,19 +497,14 @@ main()
 	                        "are X-axis, (0,0) UV is top-left of the screen and top-left of this array.");
 
 
-	cJSON *grids_list = cJSON_AddArrayToObject(root, "grids");
 
-	cJSON *jorge = cJSON_CreateObject();
-
-	cJSON_AddItemToArray(grids_list, jorge);
-
-	cJSON_AddNumberToObject(jorge, "ipd", .064);
+	cJSON_AddNumberToObject(root, "ipd", 64.0);
 
 
 
 	for (int view = 0; view < 2; view++) {
 
-		cJSON *view_json = cJSON_AddObjectToObject(jorge, view ? "right" : "left");
+		cJSON *view_json = cJSON_AddObjectToObject(root, view ? "right" : "left");
 		cJSON_AddNumberToObject(view_json, "dist_from_center", view ? .032f : -.032f);
 
 		cJSON *grid = cJSON_AddArrayToObject(view_json, "grid");
@@ -465,12 +527,18 @@ main()
 		}
 	}
 
-	char *hi = NULL;
-	hi = cJSON_Print(root);
+	char *str = NULL;
+	str = cJSON_Print(root);
 
 	printf("%s\n", cJSON_Print(root));
 
-	free(hi);
+	FILE *out_file = fopen("NSConfig_without_laplace.json", "w+");
+	fprintf(out_file, "%s\n", str);
+	fflush(out_file);
+	fclose(out_file);
+	out_file = NULL;
+	free(str);
+
 
 	cJSON_free(root);
 

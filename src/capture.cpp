@@ -1,4 +1,5 @@
-#include <iostream>
+#include "util/u_time.h"
+#include "os/os_time.h"
 
 #include "depthai/depthai.hpp"
 
@@ -6,6 +7,9 @@
 #include <opencv2/aruco/dictionary.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
+
+#include <iostream>
+#include <filesystem>
 
 // Structs
 
@@ -19,12 +23,10 @@ struct point2i
 
 struct capture_object
 {
-
-
 	cv::Ptr<cv::aruco::Dictionary> our_dict;
 
-	cv::Mat gray_img_left;
-	cv::Mat gray_img_right;
+	cv::Mat gray_img_left = cv::Mat(cv::Size{1280, 800}, CV_8UC1);
+	cv::Mat gray_img_right = cv::Mat(cv::Size{1280, 800}, CV_8UC1);
 
 	dai::Device *device;
 
@@ -39,11 +41,13 @@ void
 hack_get_images(capture_object *obj)
 {
 	// Very bad - I'm just too lazy to not do global state
-	auto inLeft = obj->qLeft->get<dai::ImgFrame>();
-	auto inRight = obj->qRight->get<dai::ImgFrame>();
+	dai::ImgFrame *inLeft = obj->qLeft->get<dai::ImgFrame>().get();
+	dai::ImgFrame *inRight = obj->qRight->get<dai::ImgFrame>().get();
 
-	obj->gray_img_left = inLeft->getCvFrame();
-	obj->gray_img_right = inRight->getCvFrame();
+	// Bad but will work. For later, use Monado frameservers or check the way depthai_driver does this referencing
+	// the imgFrame
+	memcpy(obj->gray_img_left.data, inLeft->getData().data(), 1280 * 800);
+	memcpy(obj->gray_img_right.data, inRight->getData().data(), 1280 * 800);
 }
 
 
@@ -190,6 +194,7 @@ setup_camera(capture_object *obj)
 int
 main()
 {
+	std::filesystem::create_directories("captures");
 	capture_object *the_one_and_only = new capture_object;
 	setup_camera(the_one_and_only);
 	cv::namedWindow("hi", 0);
@@ -204,6 +209,12 @@ main()
 	    {0, 1}, //
 	    {1, 1}  //
 	};
+
+
+	printf("waiting for initial exposure settle-down\r");
+	fflush(stdout);
+
+	os_nanosleep(U_TIME_1S_IN_NS * 5);
 
 	bool first = true;
 

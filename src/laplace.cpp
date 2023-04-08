@@ -135,7 +135,7 @@ lap_display_grid(LapGrid *obj, bool show_back, bool show_front)
 int
 main()
 {
-	const char *config_path = "src/yar.json";
+	const char *config_path = "NSConfig_without_laplace.json";
 	FILE *config_file = fopen(config_path, "r");
 	if (config_file == NULL) {
 		load_error();
@@ -159,9 +159,7 @@ main()
 
 	cJSON *config_json = cJSON_Parse(json);
 
-	const cJSON *grids_json = u_json_get(config_json, "grids");
-	if (grids_json == NULL)
-		parse_error();
+
 
 	// Assume height 21, width 19.
 
@@ -175,43 +173,39 @@ main()
 
 	const cJSON *current_element = NULL;
 
-	cJSON_ArrayForEach(current_element, grids_json)
-	{ // Note to people reviewing this: this is definitely not super safe. Tried to add as many null-checks as
-	  // possible etc. but is probably a waste of time, it takes a while to do this right and the only person using
-	  // this code is me -Moses
 
-		for (int view = 0; view < 2; view++) {
-			const struct cJSON *grid_root = u_json_get(current_element, view ? "right" : "left");
-			grid_root = u_json_get(grid_root, "grid");
-			// if view is 0, then left. if view is 1, then right
-			for (int lv = 0; lv < grid_height; lv++) {
-				struct cJSON *v_axis = cJSON_GetArrayItem(grid_root, lv);
-				// printf("v:axis: %s\n", cJSON_Print(v_axis));
 
-				for (int lu = 0; lu < grid_width; lu++) {
-					struct cJSON *cell = cJSON_GetArrayItem(v_axis, lu);
+	for (int view = 0; view < 2; view++) {
+		const struct cJSON *grid_root = u_json_get(config_json, view ? "right" : "left");
+		grid_root = u_json_get(grid_root, "grid");
+		// if view is 0, then left. if view is 1, then right
+		for (int lv = 0; lv < grid_height; lv++) {
+			struct cJSON *v_axis = cJSON_GetArrayItem(grid_root, lv);
+			// printf("v:axis: %s\n", cJSON_Print(v_axis));
 
-					struct cJSON *cellX = cJSON_GetArrayItem(cell, 0);
-					struct cJSON *cellY = cJSON_GetArrayItem(cell, 1);
-					if (grid_root == NULL || cell == NULL || v_axis == NULL || cellX == NULL ||
-					    cellY == NULL) {
-						parse_error();
-					}
-					float *x_ptr = &start_grids[view].corners[lv][lu].bearing.x;
-					float *y_ptr = &start_grids[view].corners[lv][lu].bearing.y;
-					if (cJSON_IsNull(cellX) || cJSON_IsNull(cellY)) {
-						*x_ptr = NAN;
-						*y_ptr = NAN;
-					}
-					u_json_get_float(cellX, x_ptr);
-					u_json_get_float(cellY, y_ptr);
-					start_grids[view].corners[lv][lu].status = CAPTURED;
+			for (int lu = 0; lu < grid_width; lu++) {
+				struct cJSON *cell = cJSON_GetArrayItem(v_axis, lu);
+
+				struct cJSON *cellX = cJSON_GetArrayItem(cell, 0);
+				struct cJSON *cellY = cJSON_GetArrayItem(cell, 1);
+				if (grid_root == NULL || cell == NULL || v_axis == NULL || cellX == NULL ||
+				    cellY == NULL) {
+					parse_error();
 				}
-				// printf("\n");
+				float *x_ptr = &start_grids[view].corners[lv][lu].bearing.x;
+				float *y_ptr = &start_grids[view].corners[lv][lu].bearing.y;
+				if (cJSON_IsNull(cellX) || cJSON_IsNull(cellY)) {
+					*x_ptr = NAN;
+					*y_ptr = NAN;
+				}
+				u_json_get_float(cellX, x_ptr);
+				u_json_get_float(cellY, y_ptr);
+				start_grids[view].corners[lv][lu].status = CAPTURED;
 			}
+			// printf("\n");
 		}
-		break;
 	}
+
 
 	// display_grid(&start_grids[0]);
 	// cv::waitKey(0);
@@ -260,7 +254,7 @@ main()
 	bool show_back = true;
 	bool show_front = true;
 	lap_display_grid(&real_grids[0], show_back, show_front);
-	cv::waitKey(0);
+	cv::waitKey(1);
 	int view = 0;
 	for (int view = 0; view < 2; view++) {
 		for (int i = 0; i < 100; i++) {
@@ -313,11 +307,12 @@ main()
 		}
 	}
 
-
+	cv::waitKey(0);
 
 	cJSON *root = cJSON_CreateObject();
 
-	cJSON_AddStringToObject(root, "calibration-type", "Numba two babey!!!!!");
+	cJSON_AddStringToObject(root, "type", "Moshi's meshgrid-based distortion correction");
+	cJSON_AddNumberToObject(root, "version", 2);
 
 	cJSON_AddNumberToObject(root, "num_grid_points_x", real_grids[0].width);
 	cJSON_AddNumberToObject(root, "num_grid_points_y", real_grids[0].height);
@@ -328,19 +323,15 @@ main()
 	                        "are X-axis, (0,0) UV is top-left of the screen and top-left of this array.");
 
 
-	cJSON *grids_list = cJSON_AddArrayToObject(root, "grids");
 
-	cJSON *jorge = cJSON_CreateObject();
 
-	cJSON_AddItemToArray(grids_list, jorge);
-
-	cJSON_AddNumberToObject(jorge, "ipd", .064);
+	cJSON_AddNumberToObject(root, "ipd", 64.0);
 
 
 
 	for (int view = 0; view < 2; view++) {
 
-		cJSON *view_json = cJSON_AddObjectToObject(jorge, view ? "right" : "left");
+		cJSON *view_json = cJSON_AddObjectToObject(root, view ? "right" : "left");
 		cJSON_AddNumberToObject(view_json, "dist_from_center", view ? .032f : -.032f);
 
 		cJSON *grid = cJSON_AddArrayToObject(view_json, "grid");
@@ -363,12 +354,18 @@ main()
 		}
 	}
 
-	char *hi = NULL;
-	hi = cJSON_Print(root);
+	char *str = NULL;
+	str = cJSON_Print(root);
 
 	printf("%s\n", cJSON_Print(root));
 
-	free(hi);
+	FILE *out_file = fopen("NSConfig.json", "w+");
+	fprintf(out_file, "%s\n", str);
+	fflush(out_file);
+	fclose(out_file);
+	out_file = NULL;
+	free(str);
+
 
 	cJSON_free(root);
 

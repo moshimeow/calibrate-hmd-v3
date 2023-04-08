@@ -1,5 +1,4 @@
-# Copyright 2023, Pluto VR, Inc.
-# SPDX-License-Identifier: MIT
+# Copyright 2023, Pluto VR, Inc. SPDX-License-Identifier: MIT
 
 cmake_minimum_required(VERSION 3.10.2)
 project(linux-streaming VERSION 0.0.1)
@@ -9,108 +8,114 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+# Does not need to be fast and we're debugging a lot
+set(CMAKE_BUILD_TYPE Debug)
 
 # Make sure we have pretty colours
-option(DISABLE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
+option(DISABLE_COLORED_OUTPUT
+       "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 
 if(NOT DISABLE_COLORED_OUTPUT)
-	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-		add_compile_options(-fdiagnostics-color=always)
-	elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		add_compile_options(-fcolor-diagnostics)
-	endif()
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_compile_options(-fdiagnostics-color=always)
+  elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(-fcolor-diagnostics)
+  endif()
 endif()
 
 # Get Monado's CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/monado/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/monado/cmake/sanitizers")
+list(APPEND CMAKE_MODULE_PATH
+     "${CMAKE_CURRENT_SOURCE_DIR}/monado/cmake/sanitizers")
 
 if(NOT MSVC)
-	set(CMAKE_C_FLAGS
-	    "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra -Wno-unused-parameter -Werror=incompatible-pointer-types"
-		)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
-	set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined")
+  set(CMAKE_C_FLAGS
+      "${CMAKE_C_FLAGS} -pedantic -Wall -Wextra -Wno-unused-parameter -Werror=incompatible-pointer-types"
+  )
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
+  set(CMAKE_SHARED_LINKER_FLAGS
+      "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+  set(CMAKE_MODULE_LINKER_FLAGS
+      "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined")
 endif()
-
 
 # Default to PIC code
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(MONADO_SRC_XRT ${CMAKE_CURRENT_SOURCE_DIR}/monado/src/xrt)
 
-### Set configuration options for Monado
+# Set configuration options for Monado
 
 # Helper to obey CMP0077 and work around warnings.
 function(setForce NAME VALUE)
-	set(${NAME} ${VALUE} CACHE INTERNAL "" FORCE)
+  set(${NAME}
+      ${VALUE}
+      CACHE INTERNAL "" FORCE)
 endfunction()
 
-# Let's use this for now: Monado's main compositor is really good and is an
-#easy way to see that things are working.
-setForce(XRT_FEATURE_COMPOSITOR_MAIN ON)
+# Let's use this for now: Monado's main compositor is really good and is an easy
+# way to see that things are working.
+setforce(XRT_FEATURE_COMPOSITOR_MAIN ON)
 
 # No reason to disable this
-setForce(XRT_FEATURE_COMPOSITOR_NULL ON)
+setforce(XRT_FEATURE_COMPOSITOR_NULL ON)
 
-# It looks like we can use Monado's normal out-of-proc OpenXR instance as-is. We'll see.
-setForce(XRT_FEATURE_OPENXR ON)
+# It looks like we can use Monado's normal out-of-proc OpenXR instance as-is.
+# We'll see.
+setforce(XRT_FEATURE_OPENXR ON)
 
-setForce(XRT_FEATURE_RENDERDOC OFF) # we are not using this
-setForce(XRT_FEATURE_STEAMVR_PLUGIN OFF) # we are not using this
-setForce(XRT_FEATURE_TRACING OFF) # we are not using this yet
-setForce(XRT_FEATURE_SLAM OFF) # we are not using this
+setforce(XRT_FEATURE_RENDERDOC OFF) # we are not using this
+setforce(XRT_FEATURE_STEAMVR_PLUGIN OFF) # we are not using this
+setforce(XRT_FEATURE_TRACING OFF) # we are not using this yet
+setforce(XRT_FEATURE_SLAM OFF) # we are not using this
 
-setForce(XRT_FEATURE_CLIENT_DEBUG_GUI OFF) # we are not using this
+setforce(XRT_FEATURE_CLIENT_DEBUG_GUI OFF) # we are not using this
 
-setForce(XRT_MODULE_MONADO_CLI OFF) # we are not using this
-setForce(XRT_MODULE_MONADO_GUI OFF) # we are not using this
-setForce(XRT_MODULE_MERCURY_HANDTRACKING OFF)
+setforce(XRT_MODULE_MONADO_CLI OFF) # we are not using this
+setforce(XRT_MODULE_MONADO_GUI OFF) # we are not using this
+setforce(XRT_MODULE_MERCURY_HANDTRACKING OFF)
 
-setForce(XRT_HAVE_D3D11 OFF)
-setForce(XRT_HAVE_D3D12 OFF)
-setForce(XRT_HAVE_OPENCV OFF)
+setforce(XRT_HAVE_D3D11 OFF)
+setforce(XRT_HAVE_D3D12 OFF)
+setforce(XRT_HAVE_OPENCV OFF)
 
 # No drivers!
-setForce(XRT_BUILD_DRIVER_ANDROID OFF)
-setForce(XRT_BUILD_DRIVER_ARDUINO OFF)
-setForce(XRT_BUILD_DRIVER_DAYDREAM OFF)
-setForce(XRT_BUILD_DRIVER_DEPTHAI OFF)
-setForce(XRT_BUILD_DRIVER_EUROC OFF)
-setForce(XRT_BUILD_DRIVER_HANDTRACKING OFF)
-setForce(XRT_BUILD_DRIVER_TWRAP OFF)
-setForce(XRT_BUILD_DRIVER_HDK OFF)
-setForce(XRT_BUILD_DRIVER_HYDRA OFF)
-setForce(XRT_BUILD_DRIVER_ILLIXR OFF)
-setForce(XRT_BUILD_DRIVER_NS OFF)
-setForce(XRT_BUILD_DRIVER_OHMD OFF)
-setForce(XRT_BUILD_DRIVER_OPENGLOVES OFF)
-setForce(XRT_BUILD_DRIVER_PSMV OFF)
-setForce(XRT_BUILD_DRIVER_PSVR OFF)
-setForce(XRT_BUILD_DRIVER_QWERTY OFF)
-setForce(XRT_BUILD_DRIVER_REALSENSE OFF)
-setForce(XRT_BUILD_DRIVER_REMOTE OFF)
-setForce(XRT_BUILD_DRIVER_RIFT_S OFF)
-setForce(XRT_BUILD_DRIVER_SURVIVE OFF)
-setForce(XRT_BUILD_DRIVER_ULV2 OFF)
-setForce(XRT_BUILD_DRIVER_VF OFF)
-setForce(XRT_BUILD_DRIVER_VIVE OFF)
-setForce(XRT_BUILD_DRIVER_WMR OFF)
-setForce(XRT_BUILD_DRIVER_SIMULAVR OFF)
+setforce(XRT_BUILD_DRIVER_ANDROID OFF)
+setforce(XRT_BUILD_DRIVER_ARDUINO OFF)
+setforce(XRT_BUILD_DRIVER_DAYDREAM OFF)
+setforce(XRT_BUILD_DRIVER_DEPTHAI OFF)
+setforce(XRT_BUILD_DRIVER_EUROC OFF)
+setforce(XRT_BUILD_DRIVER_HANDTRACKING OFF)
+setforce(XRT_BUILD_DRIVER_TWRAP OFF)
+setforce(XRT_BUILD_DRIVER_HDK OFF)
+setforce(XRT_BUILD_DRIVER_HYDRA OFF)
+setforce(XRT_BUILD_DRIVER_ILLIXR OFF)
+setforce(XRT_BUILD_DRIVER_NS OFF)
+setforce(XRT_BUILD_DRIVER_OHMD OFF)
+setforce(XRT_BUILD_DRIVER_OPENGLOVES OFF)
+setforce(XRT_BUILD_DRIVER_PSMV OFF)
+setforce(XRT_BUILD_DRIVER_PSVR OFF)
+setforce(XRT_BUILD_DRIVER_QWERTY OFF)
+setforce(XRT_BUILD_DRIVER_REALSENSE OFF)
+setforce(XRT_BUILD_DRIVER_REMOTE OFF)
+setforce(XRT_BUILD_DRIVER_RIFT_S OFF)
+setforce(XRT_BUILD_DRIVER_SURVIVE OFF)
+setforce(XRT_BUILD_DRIVER_ULV2 OFF)
+setforce(XRT_BUILD_DRIVER_VF OFF)
+setforce(XRT_BUILD_DRIVER_VIVE OFF)
+setforce(XRT_BUILD_DRIVER_WMR OFF)
+setforce(XRT_BUILD_DRIVER_SIMULAVR OFF)
 
-# There is no clean way to disable the prober/builders (as far as I can see?)
-# So we enable one driver so that the legacy builder does not die
-setForce(XRT_BUILD_DRIVER_SIMULATED ON)
+# There is no clean way to disable the prober/builders (as far as I can see?) So
+# we enable one driver so that the legacy builder does not die
+setforce(XRT_BUILD_DRIVER_SIMULATED ON)
 
-setForce(XRT_BUILD_SAMPLES OFF)
+setforce(XRT_BUILD_SAMPLES OFF)
 
-setForce(BUILD_TESTING OFF)
-setForce(BUILD_DOC OFF)
+setforce(BUILD_TESTING OFF)
+setforce(BUILD_DOC OFF)
 
 add_subdirectory(monado)
-
 
 find_package(
   OpenCV
@@ -127,30 +132,56 @@ find_package(depthai CONFIG)
 
 find_package(Sanitizers)
 
-
-
+add_library(load_basalt_calibration STATIC src/load_basalt_calibration.cpp
+                                           src/load_basalt_calibration.hpp)
+target_link_libraries(load_basalt_calibration aux_util aux_os aux_tracking)
 
 add_executable(aruco_test src/aruco_test.cpp)
 target_link_libraries(aruco_test PRIVATE ${OpenCV_LIBRARIES})
 target_include_directories(aruco_test PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-add_executable(view src/view.cpp)
-target_link_libraries(view PRIVATE ${OpenCV_LIBRARIES} depthai::opencv depthai::core XLink aux_util aux_math xrt-external-cjson )
-target_include_directories(view PRIVATE ${OpenCV_INCLUDE_DIRS})
-
+# add_executable(view src/view.cpp) target_link_libraries( view PRIVATE
+# ${OpenCV_LIBRARIES} depthai::core XLink aux_util aux_math xrt-external-cjson
+# load_basalt_calibration) target_include_directories(view PRIVATE
+# ${OpenCV_INCLUDE_DIRS})
 
 add_executable(capture src/capture.cpp)
-target_link_libraries(capture PRIVATE ${OpenCV_LIBRARIES} depthai::opencv depthai::core XLink aux_util aux_math xrt-external-cjson )
+target_link_libraries(
+  capture
+  PRIVATE ${OpenCV_LIBRARIES}
+          depthai::core
+          XLink
+          aux_util
+          aux_math
+          xrt-external-cjson
+          load_basalt_calibration)
 target_include_directories(capture PRIVATE ${OpenCV_INCLUDE_DIRS})
 add_sanitizers(capture)
 
-
-add_executable(calibrate src/defines.hpp src/fdg.cpp src/fdg.hpp src/calibrate.cpp )
-target_link_libraries(calibrate PRIVATE ${OpenCV_LIBRARIES} depthai::opencv depthai::core XLink aux_util aux_math xrt-external-cjson)
-target_include_directories(calibrate PRIVATE ${OpenCV_INCLUDE_DIRS} )
+add_executable(calibrate src/defines.hpp src/fdg.cpp src/fdg.hpp
+                         src/calibrate.cpp)
+target_link_libraries(
+  calibrate
+  PRIVATE ${OpenCV_LIBRARIES}
+          depthai::core
+          XLink
+          aux_util
+          aux_math
+          xrt-external-cjson
+          load_basalt_calibration)
+target_include_directories(calibrate PRIVATE ${OpenCV_INCLUDE_DIRS})
 add_sanitizers(calibrate)
 
 add_executable(laplace src/laplace.cpp src/fdg.cpp src/fdg.hpp)
-target_link_libraries(laplace PRIVATE ${OpenCV_LIBRARIES} depthai::opencv depthai::core XLink aux_util aux_math xrt-external-cjson)
-target_include_directories(laplace PRIVATE ${OpenCV_INCLUDE_DIRS} )
+target_link_libraries(
+  laplace
+  PRIVATE ${OpenCV_LIBRARIES}
+          depthai::core
+          XLink
+          aux_util
+          aux_math
+          xrt-external-cjson
+          load_basalt_calibration)
+
+target_include_directories(laplace PRIVATE ${OpenCV_INCLUDE_DIRS})
 add_sanitizers(laplace)
