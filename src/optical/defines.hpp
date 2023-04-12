@@ -1,9 +1,6 @@
 #pragma once
 #include <iostream>
 
-#include "depthai/depthai.hpp"
-
-#include <opencv2/aruco.hpp>
 #include <opencv2/aruco/dictionary.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgcodecs.hpp>

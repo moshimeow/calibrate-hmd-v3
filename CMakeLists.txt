@@ -117,6 +117,7 @@ setforce(BUILD_DOC OFF)
 
 add_subdirectory(monado)
 
+
 find_package(
   OpenCV
   COMPONENTS core
@@ -132,56 +133,6 @@ find_package(depthai CONFIG)
 
 find_package(Sanitizers)
 
-add_library(load_basalt_calibration STATIC src/load_basalt_calibration.cpp
-                                           src/load_basalt_calibration.hpp)
-target_link_libraries(load_basalt_calibration aux_util aux_os aux_tracking)
+add_subdirectory(src)
 
-add_executable(aruco_test src/aruco_test.cpp)
-target_link_libraries(aruco_test PRIVATE ${OpenCV_LIBRARIES})
-target_include_directories(aruco_test PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-# add_executable(view src/view.cpp) target_link_libraries( view PRIVATE
-# ${OpenCV_LIBRARIES} depthai::core XLink aux_util aux_math xrt-external-cjson
-# load_basalt_calibration) target_include_directories(view PRIVATE
-# ${OpenCV_INCLUDE_DIRS})
-
-add_executable(capture src/capture.cpp)
-target_link_libraries(
-  capture
-  PRIVATE ${OpenCV_LIBRARIES}
-          depthai::core
-          XLink
-          aux_util
-          aux_math
-          xrt-external-cjson
-          load_basalt_calibration)
-target_include_directories(capture PRIVATE ${OpenCV_INCLUDE_DIRS})
-add_sanitizers(capture)
-
-add_executable(calibrate src/defines.hpp src/fdg.cpp src/fdg.hpp
-                         src/calibrate.cpp)
-target_link_libraries(
-  calibrate
-  PRIVATE ${OpenCV_LIBRARIES}
-          depthai::core
-          XLink
-          aux_util
-          aux_math
-          xrt-external-cjson
-          load_basalt_calibration)
-target_include_directories(calibrate PRIVATE ${OpenCV_INCLUDE_DIRS})
-add_sanitizers(calibrate)
-
-add_executable(laplace src/laplace.cpp src/fdg.cpp src/fdg.hpp)
-target_link_libraries(
-  laplace
-  PRIVATE ${OpenCV_LIBRARIES}
-          depthai::core
-          XLink
-          aux_util
-          aux_math
-          xrt-external-cjson
-          load_basalt_calibration)
-
-target_include_directories(laplace PRIVATE ${OpenCV_INCLUDE_DIRS})
-add_sanitizers(laplace)

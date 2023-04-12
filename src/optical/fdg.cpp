@@ -1,5 +1,4 @@
 #include "util/u_logging.h"
-#include "depthai/depthai.hpp"
 
 #include <opencv2/aruco.hpp>
 #include <opencv2/aruco/dictionary.hpp>
