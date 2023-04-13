@@ -180,7 +180,10 @@ bear2px(xrt_vec2 bear)
 static void
 display_grid(CaptureGrid *obj)
 {
+	// Uninitialized here!
 	cv::Mat hey(1440, 1440, CV_8UC3);
+	// Initialize it by making sure all the pixels are 0
+	hey = 0;
 	// right, right-down, down, down-left
 	cv::Scalar color = {0x2b, 0xcb, 0x7c};
 	for (int v = 0; v < grid_height; v++) {

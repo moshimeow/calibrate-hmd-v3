@@ -47,7 +47,7 @@ assert_leftcam_0(JSONNode &json)
 }
 
 void
-get_camera_translation(JSONNode &json, t_stereo_camera_calibration &calib)
+get_camera_translation_suspect_prow(JSONNode &json, t_stereo_camera_calibration &calib)
 {
 	JSONNode left_to_right_j = json["value0"]["T_imu_cam"][1];
 
@@ -63,13 +63,23 @@ get_camera_translation(JSONNode &json, t_stereo_camera_calibration &calib)
 
 	xrt_pose right_to_left_p;
 
-	#if 0
+
+	// OK so:
+
+	// We had to invert to save to the ProW, but did not have to for optical calibration or for running hand
+	// tracking on a dataset.
+
+	// Note that setting calib.camera_rotation might be transposing it, maybe, and that the things we're doing to
+	// camera_translation look like a transform from OpenXR space to camera space, which doesn't seem valid here.
+
+
+#if 1
 
 	math_pose_invert(&left_to_right_p, &right_to_left_p);
 
-	#else
+#else
 	right_to_left_p = left_to_right_p;
-	#endif
+#endif
 
 
 	xrt_matrix_3x3 bl = {};
@@ -94,7 +104,131 @@ get_camera_translation(JSONNode &json, t_stereo_camera_calibration &calib)
 }
 
 void
-get_camera_params_kb4(JSONNode camera, t_camera_calibration &calib) {
+get_camera_translation_other(JSONNode &json, t_stereo_camera_calibration &calib)
+{
+	JSONNode left_to_right_j = json["value0"]["T_imu_cam"][1];
+
+	xrt_pose left_to_right_p = {};
+	left_to_right_p.position.x = left_to_right_j["px"].asDouble();
+	left_to_right_p.position.y = left_to_right_j["py"].asDouble();
+	left_to_right_p.position.z = left_to_right_j["pz"].asDouble();
+
+	left_to_right_p.orientation.w = left_to_right_j["qw"].asDouble();
+	left_to_right_p.orientation.x = left_to_right_j["qx"].asDouble();
+	left_to_right_p.orientation.y = left_to_right_j["qy"].asDouble();
+	left_to_right_p.orientation.z = left_to_right_j["qz"].asDouble();
+
+	xrt_pose right_to_left_p;
+
+
+	// OK so:
+
+	// We had to invert to save to the ProW, but did not have to for optical calibration or for running hand
+	// tracking on a dataset.
+
+	// Note that setting calib.camera_rotation might be transposing it, maybe, and that the things we're doing to
+	// camera_translation look like a transform from OpenXR space to camera space, which doesn't seem valid here.
+
+
+#if 0
+
+	math_pose_invert(&left_to_right_p, &right_to_left_p);
+
+#else
+	right_to_left_p = left_to_right_p;
+#endif
+
+
+	xrt_matrix_3x3 bl = {};
+
+	math_matrix_3x3_from_quat(&right_to_left_p.orientation, &bl);
+
+	calib.camera_rotation[0][0] = bl.v[0];
+	calib.camera_rotation[1][0] = bl.v[1];
+	calib.camera_rotation[2][0] = bl.v[2];
+
+	calib.camera_rotation[0][1] = bl.v[3];
+	calib.camera_rotation[1][1] = bl.v[4];
+	calib.camera_rotation[2][1] = bl.v[5];
+
+	calib.camera_rotation[0][2] = bl.v[6];
+	calib.camera_rotation[1][2] = bl.v[7];
+	calib.camera_rotation[2][2] = bl.v[8];
+
+	calib.camera_translation[0] = right_to_left_p.position.x;
+	calib.camera_translation[1] = -right_to_left_p.position.y;
+	calib.camera_translation[2] = -right_to_left_p.position.z;
+}
+
+void
+get_camera_translation(JSONNode &json, t_stereo_camera_calibration &calib)
+{
+	JSONNode left_to_right_j = json["value0"]["T_imu_cam"][1];
+
+	xrt_pose left_to_right_p = {};
+	left_to_right_p.position.x = left_to_right_j["px"].asDouble();
+	left_to_right_p.position.y = left_to_right_j["py"].asDouble();
+	left_to_right_p.position.z = left_to_right_j["pz"].asDouble();
+
+	left_to_right_p.orientation.w = left_to_right_j["qw"].asDouble();
+	left_to_right_p.orientation.x = left_to_right_j["qx"].asDouble();
+	left_to_right_p.orientation.y = left_to_right_j["qy"].asDouble();
+	left_to_right_p.orientation.z = left_to_right_j["qz"].asDouble();
+
+	xrt_pose right_to_left_p;
+
+	#if 1
+
+	math_pose_invert(&left_to_right_p, &right_to_left_p);
+
+	#else
+	right_to_left_p = left_to_right_p;
+	#endif
+
+
+	xrt_matrix_3x3 bl = {};
+
+	math_matrix_3x3_from_quat(&right_to_left_p.orientation, &bl);
+
+	#if 0
+
+	calib.camera_rotation[0][0] = bl.v[0];
+	calib.camera_rotation[1][0] = bl.v[1];
+	calib.camera_rotation[2][0] = bl.v[2];
+
+	calib.camera_rotation[0][1] = bl.v[3];
+	calib.camera_rotation[1][1] = bl.v[4];
+	calib.camera_rotation[2][1] = bl.v[5];
+
+	calib.camera_rotation[0][2] = bl.v[6];
+	calib.camera_rotation[1][2] = bl.v[7];
+	calib.camera_rotation[2][2] = bl.v[8];
+
+	#else
+
+
+	calib.camera_rotation[0][0] = bl.v[0];
+	calib.camera_rotation[0][1] = bl.v[1];
+	calib.camera_rotation[0][2] = bl.v[2];
+
+	calib.camera_rotation[1][0] = bl.v[3];
+	calib.camera_rotation[1][1] = bl.v[4];
+	calib.camera_rotation[1][2] = bl.v[5];
+
+	calib.camera_rotation[2][0] = bl.v[6];
+	calib.camera_rotation[2][1] = bl.v[7];
+	calib.camera_rotation[2][2] = bl.v[8];
+
+	#endif
+
+	calib.camera_translation[0] = right_to_left_p.position.x;
+	calib.camera_translation[1] = right_to_left_p.position.y;
+	calib.camera_translation[2] = right_to_left_p.position.z;
+}
+
+void
+get_camera_params_kb4(JSONNode camera, t_camera_calibration &calib)
+{
 
 	assert(camera["camera_type"].asString() == "kb4");
 
@@ -130,12 +264,13 @@ load_basalt_calibration(const char *path, t_stereo_camera_calibration **out_cali
 	get_camera_params_kb4(json["value0"]["intrinsics"][0], calib_ref.view[0]);
 	get_camera_params_kb4(json["value0"]["intrinsics"][1], calib_ref.view[1]);
 
-	calib_ref.view[0].image_size_pixels.w = 640;
-	calib_ref.view[0].image_size_pixels.h = 480;
+	JSONNode r_arr = json["value0"]["resolution"];
 
-	calib_ref.view[1].image_size_pixels.w = 640;
-	calib_ref.view[1].image_size_pixels.h = 480;
+	calib_ref.view[0].image_size_pixels.w = r_arr[0][0].asDouble();
+	calib_ref.view[0].image_size_pixels.h = r_arr[0][1].asDouble();
 
+	calib_ref.view[1].image_size_pixels.w = r_arr[1][0].asDouble();
+	calib_ref.view[1].image_size_pixels.h = r_arr[1][1].asDouble();
 
 
 

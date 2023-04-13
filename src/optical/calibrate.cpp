@@ -421,7 +421,7 @@ main()
 
 	cJSON *root = cJSON_CreateObject();
 
-	cJSON_AddStringToObject(root, "type", "Moshi's meshgrid-based distortion correction");
+	cJSON_AddStringToObject(root, "type", "meshgrid");
 	cJSON_AddNumberToObject(root, "version", 2);
 
 	cJSON_AddNumberToObject(root, "num_grid_points_x", 19);

@@ -64,34 +64,15 @@ bear2px(xrt_vec2 bear)
 	return {bear.x, bear.y};
 }
 
-static void
-display_grid(CaptureGrid *obj)
-{
-	cv::Mat hey(1400, 1400, CV_8UC3);
-	// right, right-down, down, down-left
-	cv::Scalar color = {0x2b, 0xcb, 0x7c};
-	for (int v = 0; v < grid_height; v++) {
-		for (int u = 0; u < grid_width; u++) {
-			// Right
-			if (u != grid_width - 1) {
-				cv::line(hey, bear2px(obj->corners[v][u].bearing),
-				         bear2px(obj->corners[v][u + 1].bearing), color);
-			}
-			// down
-			if (v != grid_height - 1) {
-				cv::line(hey, bear2px(obj->corners[v][u].bearing),
-				         bear2px(obj->corners[v + 1][u].bearing), color);
-			}
-		}
-	}
-	cv::imshow("graph!", hey);
-	cv::waitKey(1);
-}
 
 static void
 lap_display_grid(LapGrid *obj, bool show_back, bool show_front)
 {
+	// Uninitialized here!
 	cv::Mat hey(1400, 1400, CV_8UC3);
+
+	// Initialize it by making sure all the pixels are 0
+	hey = 0;
 	// right, right-down, down, down-left
 
 	if (show_back) {
@@ -311,7 +292,7 @@ main()
 
 	cJSON *root = cJSON_CreateObject();
 
-	cJSON_AddStringToObject(root, "type", "Moshi's meshgrid-based distortion correction");
+	cJSON_AddStringToObject(root, "type", "meshgrid");
 	cJSON_AddNumberToObject(root, "version", 2);
 
 	cJSON_AddNumberToObject(root, "num_grid_points_x", real_grids[0].width);
@@ -321,7 +302,6 @@ main()
 	                        "for each member of `grids->{left, right}`, `grid` is a mapping from UV to bearing "
 	                        "coordinates - rows are Y-axis, columns "
 	                        "are X-axis, (0,0) UV is top-left of the screen and top-left of this array.");
-
 
 
 
